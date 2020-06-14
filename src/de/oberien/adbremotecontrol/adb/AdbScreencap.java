@@ -34,7 +34,7 @@ public class AdbScreencap extends AdbExecOut {
                     Base64.getMimeDecoder().decode(img, img);
                 } else {
                     img = tryFixODOA(img);
-                    writeByte("device_dump.png", img);
+                    // writeByte("device_dump.png", img);
                 }
                 ByteArrayInputStream bis = new ByteArrayInputStream(img);
                 screenshot = ImageIO.read(bis);
