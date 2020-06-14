@@ -6,19 +6,17 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class AdbProcess implements Closeable {
-    public BufferedInputStream in;
-    public BufferedWriter out;
-    private Process process;
+public class AdbProcess implements AutoCloseable {
+    protected BufferedInputStream adbIn = null;
+    protected BufferedWriter adbOut = null;
+    private Process process = null;
 
     public AdbProcess(String... command) {
         try {
-            process = new ProcessBuilder(combine(Config.adbPath, command))
-                .redirectInput(ProcessBuilder.Redirect.PIPE)
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .start();
-            in = new BufferedInputStream(process.getInputStream());
-            out = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+            process = new ProcessBuilder(combine(Config.adbPath, command)).redirectInput(ProcessBuilder.Redirect.PIPE)
+                    .redirectOutput(ProcessBuilder.Redirect.PIPE).start();
+            adbIn = new BufferedInputStream(process.getInputStream());
+            adbOut = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -34,18 +32,18 @@ public class AdbProcess implements Closeable {
     public byte[] readUntil(byte... until) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         while (true) {
-            in.mark(4096);
+            adbIn.mark(4096);
             byte[] buf = new byte[4096];
-            int len = in.read(buf);
+            int len = adbIn.read(buf);
             if (len == -1) {
                 throw new IOException("Stream closed");
             }
             // if currently not enough is available, block until further is
             if (len < until.length) {
-                if (in.read() == -1) {
+                if (adbIn.read() == -1) {
                     throw new IOException("Stream closed");
                 }
-                in.reset();
+                adbIn.reset();
                 continue;
             }
             int pos = -1;
@@ -62,14 +60,14 @@ public class AdbProcess implements Closeable {
                     break;
                 }
             }
-            in.reset();
+            adbIn.reset();
             if (pos != -1) {
                 bos.write(buf, 0, pos);
-                in.skip(pos + until.length);
+                adbIn.skip(pos + until.length);
                 break;
             }
             bos.write(buf, 0, len - until.length + 1);
-            in.skip(len - until.length + 1);
+            adbIn.skip(len - until.length + 1);
         }
         bos.close();
         return bos.toByteArray();
@@ -77,7 +75,14 @@ public class AdbProcess implements Closeable {
 
     @Override
     public void close() throws IOException {
-        in.close();
-        out.close();
+        process = null;
+
+        if (adbIn != null)
+            adbIn.close();
+        adbIn = null;
+
+        if (adbOut != null)
+            adbOut.close();
+        adbOut = null;
     }
 }

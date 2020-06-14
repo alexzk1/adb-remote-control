@@ -12,7 +12,7 @@ public class AdbExecOut extends AdbProcess {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         byte[] buf = new byte[4096];
         int len;
-        while ((len = in.read(buf)) != -1) {
+        while ((len = adbIn.read(buf)) != -1) {
             bos.write(buf, 0, len);
         }
         return bos.toByteArray();

@@ -8,10 +8,11 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class MainFrame extends JFrame {
+    private static final long serialVersionUID = 1L;
+
     public MainFrame() {
         setTitle("ADB Remote Control");
         AdbDevice device = new AdbDevice();
-
         ScreenPanel screenPanel = new ScreenPanel(device);
         add(screenPanel, BorderLayout.CENTER);
 
@@ -20,6 +21,10 @@ public class MainFrame extends JFrame {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
         BufferedImage screenshot = device.screenshot();
+        if (screenshot == null) {
+            throw new RuntimeException("Failed to receive image from device.");
+        }
+
         System.out.println("Device screen size " + screenshot.getWidth() + " x " + screenshot.getHeight());
         int width = screenshot.getWidth(), height = screenshot.getHeight();
         double aspectRatio = (double) width / (double) height;

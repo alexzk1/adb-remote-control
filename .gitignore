@@ -4,3 +4,4 @@ out/
 src/META-INF/
 *.class
 /.vscode
+src/device_dump.png

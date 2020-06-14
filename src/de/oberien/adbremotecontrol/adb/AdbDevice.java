@@ -6,42 +6,40 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 public class AdbDevice {
-    private KeyboardInputThread keyboardThread;
-    private boolean useBase64;
+    final private KeyboardInputThread keyboardThread = new KeyboardInputThread();
+    private boolean useBase64 = false;
 
     public AdbDevice() {
-        this.keyboardThread = new KeyboardInputThread();
         keyboardThread.start();
-        this.useBase64 = false;
+    }
+
+    private BufferedImage getScreenshot() {
+        BufferedImage screenshot = null;
+        System.out.printf("Get Screenshot, base64=%d\n", (useBase64) ? 1 : 0);
+        try (AdbScreencap screencap = new AdbScreencap(this.useBase64)) {
+            screenshot = screencap.getScreenshot();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return screenshot;
     }
 
     public BufferedImage screenshot() {
-        System.out.println("Get Screenshot");
-        try (AdbScreencap screencap = new AdbScreencap(this.useBase64)) {
-            BufferedImage screenshot = screencap.getScreenshot();
-            if (screenshot != null) {
-                return screenshot;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
         // The screenshot can be null if the image isn't valid.
         // That can be the case on Windows when stdin / stdout are converted to UTF16
-        // like in <https://github.com/oberien/adb-remote-control/issues/12#issuecomment-632007509>.
+        // like in
+        // <https://github.com/oberien/adb-remote-control/issues/12#issuecomment-632007509>.
         // In that case, we encode the image to base64.
-        System.out.println("Switching to Base64-Mode");
-        this.useBase64 = true;
 
-        try (AdbScreencap screencap = new AdbScreencap(this.useBase64)) {
-            BufferedImage screenshot = screencap.getScreenshot();
-            if (screenshot == null) {
-                throw new RuntimeException("Invalid image, but we are already using base64");
-            }
-            return screenshot;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        BufferedImage screenshot = getScreenshot();
+        if (screenshot == null && !useBase64) {
+            System.out.println("Switching to Base64-Mode");
+            useBase64 = true;
+            screenshot = getScreenshot();
         }
+
+        return screenshot;
     }
 
     public void text(String text) {
@@ -68,11 +66,11 @@ public class AdbDevice {
         }
     }
 
-	public void draganddrop(int downX, int downY, int upX, int upY, long duration) {
+    public void draganddrop(int downX, int downY, int upX, int upY, long duration) {
         try (AdbShell shell = new AdbShell()) {
             shell.executeAsync("input draganddrop " + downX + " " + downY + " " + upX + " " + upY + " " + duration);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-	}
+    }
 }

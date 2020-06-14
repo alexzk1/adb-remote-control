@@ -21,7 +21,6 @@ public class Config {
         }
         adbPath = properties.getProperty("adbPath", "adb");
         timeout = Long.parseLong(properties.getProperty("timeout", "1"));
-        imageFormat = properties.getProperty("imageFormat", "jpg");
+        imageFormat = properties.getProperty("imageFormat", "png");
     }
 }
-
